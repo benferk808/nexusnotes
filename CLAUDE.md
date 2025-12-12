@@ -1,159 +1,87 @@
-# Nexus Notes - Documentacion del Proyecto
+# Nexus Notes v1.0
 
-> **Version:** 1.0.0
-> **Ultima actualizacion:** 11 de Diciembre 2025
-> **Estado:** PRODUCCION - Deploy completo en Vercel
+> App de notas offline-first con sync cloud | React 19 + TypeScript + Supabase
 
 ---
 
-## Links Importantes
+## Links de Produccion
 
 | Recurso | URL |
 |---------|-----|
-| **App en Produccion** | https://nexusnotes-steel.vercel.app/ |
-| **Repositorio GitHub** | https://github.com/benferk808/nexusnotes |
-| **Vercel Dashboard** | https://vercel.com (cuenta fnosieski@hotmail.com) |
-| **Supabase Dashboard** | https://supabase.com/dashboard (proyecto Sistema-compras-mare) |
+| **App Live** | https://nexusnotes-steel.vercel.app/ |
+| **GitHub** | https://github.com/benferk808/nexusnotes |
+| **Supabase** | https://supabase.com/dashboard (proyecto: Sistema-compras-mare) |
 
 ---
 
-## Cuentas y Accesos
+## Cuentas
 
-### GitHub (proyectos personales)
-- **Email:** fnosieski@hotmail.com
-- **Usuario:** benferk808
-- **Repo:** nexusnotes
+| Servicio | Email | Usuario |
+|----------|-------|---------|
+| GitHub | fnosieski@hotmail.com | benferk808 |
+| Vercel | fnosieski@hotmail.com | - |
+| Supabase | (cuenta FERABEN) | proyecto compartido |
 
-### Vercel
-- **Email:** fnosieski@hotmail.com
-- **Proyecto:** nexusnotes
-- **URL:** https://nexusnotes-steel.vercel.app/
+---
 
-### Supabase (compartido con FERABEN)
-- **Proyecto:** Sistema-compras-mare
-- **URL:** `https://qjiovckirghjxamqcfuv.supabase.co`
-- **API Key (Legacy anon public):**
+## Supabase Config
+
 ```
+URL: https://qjiovckirghjxamqcfuv.supabase.co
+
+API Key (anon):
 eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFqaW92Y2tpcmdoanhhbXFjZnV2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQzNjEwOTEsImV4cCI6MjA2OTkzNzA5MX0.5GhcsREBY_nnfCiTjuwogWlT6fBzv2lT3xljWQISU1s
+
+Tabla: notes (id TEXT PK, updated_at TIMESTAMP, data JSONB)
+RLS: Desactivado
 ```
-- **Tabla:** `notes` (id TEXT, updated_at TIMESTAMP, data JSONB)
-- **RLS:** Desactivado
-
----
-
-## Resumen Ejecutivo
-
-Nexus Notes es una aplicacion de notas personales **offline-first** con sincronizacion cloud opcional. Creada con React 19 + TypeScript. Permite gestionar notas con checklists, grabacion de audio, y categorizacion.
-
-**100% gratuita** - Sin APIs de pago ni costos ocultos.
-
-**BONUS:** Esta app mantiene activa la cuenta de Supabase del Sistema de Compras de FERABEN, evitando que se pause por inactividad.
 
 ---
 
 ## Estructura del Proyecto
 
 ```
-C:\Users\Usuario\Omninotes/
-│
-├── App.tsx                    # Componente principal (estado global, CRUD)
-├── index.tsx                  # Entry point de React
-├── index.html                 # HTML base con meta tags PWA
-├── types.ts                   # Tipos TypeScript (Note, NoteItem, etc.)
-├── constants.ts               # Categorias y configuracion (APP_TITLE)
-├── package.json               # Dependencias del proyecto
-├── tsconfig.json              # Configuracion TypeScript
-├── vite.config.ts             # Configuracion Vite (build, dev server)
-├── manifest.json              # Manifest PWA para instalacion
-├── service-worker.js          # Service Worker para funcionamiento offline
-├── CLAUDE.md                  # Este archivo - documentacion del proyecto
-├── README.md                  # README para GitHub
-├── .gitignore                 # Archivos excluidos de git
+C:\Users\Usuario\Omninotes\
+├── App.tsx                 # Componente principal, estado global, CRUD
+├── index.tsx               # Entry point React
+├── index.html              # HTML base + meta PWA
+├── types.ts                # Interfaces TypeScript
+├── constants.ts            # APP_TITLE, CATEGORIES
+├── manifest.json           # Config PWA (root, legacy)
+├── service-worker.js       # SW offline (root, legacy)
 │
 ├── components/
-│   ├── NoteCard.tsx           # Tarjeta de nota en el dashboard
-│   ├── NoteEditor.tsx         # Modal editor de notas completo
-│   ├── TabNavigation.tsx      # Tabs de categorias (Gaming/Trabajo/Personal)
-│   ├── QuickRecorder.tsx      # Grabador de voz rapido (modo conduccion)
-│   ├── SettingsModal.tsx      # Modal de configuracion Supabase
-│   └── ConfirmationModal.tsx  # Modal de confirmacion para eliminar
+│   ├── NoteCard.tsx        # Tarjeta de nota en dashboard
+│   ├── NoteEditor.tsx      # Modal editor completo
+│   ├── TabNavigation.tsx   # Tabs: Gaming/Trabajo/Personal
+│   ├── QuickRecorder.tsx   # Grabador voz (modo conduccion)
+│   ├── SettingsModal.tsx   # Config Supabase URL + Key
+│   └── ConfirmationModal.tsx
 │
-└── services/
-    ├── storageService.ts      # IndexedDB local + sync con Supabase
-    └── supabaseService.ts     # Cliente y funciones de Supabase
+├── services/
+│   ├── storageService.ts   # IndexedDB + sync Supabase
+│   └── supabaseService.ts  # Cliente Supabase
+│
+└── public/                 # Assets estaticos (Vite los copia a dist/)
+    ├── icon-192.png        # Icono PWA
+    ├── icon-512.png        # Icono PWA grande
+    ├── manifest.json       # PWA manifest
+    └── service-worker.js   # Service Worker
 ```
 
-**Total:** ~1,100 lineas de codigo TypeScript
-
 ---
 
-## Stack Tecnologico
+## Stack
 
-| Area | Tecnologia | Version |
-|------|------------|---------|
-| Framework | React | 19.2.1 |
-| Lenguaje | TypeScript | 5.8.2 |
-| Build Tool | Vite | 6.4.1 |
-| Estilos | Tailwind CSS | 3.x (via CDN) |
-| Iconos | Lucide React | 0.556.0 |
-| Backend | Supabase | 2.39.0 |
-| Storage Local | IndexedDB | Nativo del navegador |
-| Hosting | Vercel | - |
-| Repositorio | GitHub | - |
-
----
-
-## Funcionalidades v1.0
-
-### Gestion de Notas
-- [x] Crear, editar y eliminar notas
-- [x] 3 categorias con colores: Gaming (purpura), Trabajo (azul), Personal (verde)
-- [x] Subcategorias/etiquetas manuales personalizables
-- [x] Busqueda en tiempo real por titulo y contenido
-- [x] Ordenamiento automatico por fecha de actualizacion
-
-### Checklists / Tareas
-- [x] Agregar items de checklist dentro de cada nota
-- [x] Marcar/desmarcar completados desde el dashboard (sin abrir la nota)
-- [x] Marcar/desmarcar desde el editor
-- [x] Vista previa de items en las tarjetas
-
-### Audio
-- [x] Grabar notas de voz (formato WebM)
-- [x] Modo conduccion: pantalla completa con boton grande STOP
-- [x] Almacenamiento del audio en base64
-- [x] Reproduccion inline en el editor
-
-### Imagenes
-- [x] Adjuntar imagenes a las notas
-- [x] Vista previa en el editor
-- [x] Eliminar adjuntos individualmente
-
-### Almacenamiento
-- [x] IndexedDB para almacenamiento local (funciona offline)
-- [x] Migracion automatica desde localStorage antiguo
-- [x] Export de todas las notas a archivo JSON
-- [x] Import de notas desde archivo JSON (fusionar o reemplazar)
-
-### Sincronizacion Cloud (Supabase)
-- [x] Configuracion desde modal de Settings (URL + API Key)
-- [x] Sync bidireccional (local <-> cloud)
-- [x] Merge inteligente por timestamp
-- [x] Funciona offline-first (primero local, luego sync)
-- [x] Configuracion persistente en localStorage
-
-### PWA (Progressive Web App)
-- [x] Service Worker para cache y offline
-- [x] Manifest.json para instalacion
-- [x] Meta tags para iOS y Android
-- [x] Funciona sin conexion a internet
-- [x] HTTPS via Vercel
-
-### Interfaz
-- [x] Tema oscuro y claro (toggle en header)
-- [x] Colores dinamicos segun categoria activa
-- [x] Diseno responsive (mobile-first)
-- [x] Botones FAB: microfono rojo (grabar) y + azul (nueva nota)
+| Tech | Version |
+|------|---------|
+| React | 19.2.1 |
+| TypeScript | 5.8.2 |
+| Vite | 6.4.1 |
+| Tailwind | 3.x (CDN) |
+| Lucide React | 0.556.0 |
+| Supabase JS | 2.39.0 |
+| Hosting | Vercel |
 
 ---
 
@@ -161,16 +89,16 @@ C:\Users\Usuario\Omninotes/
 
 ```typescript
 interface Note {
-  id: string;                    // UUID unico
+  id: string;
   category: 'gaming' | 'work' | 'personal';
-  subcategory?: string;          // Etiqueta opcional (ej: "Minecraft", "Urgente")
+  subcategory?: string;
   title: string;
-  content: string;               // Texto libre
-  items: NoteItem[];             // Array de checklist items
-  attachments: MediaAttachment[]; // Imagenes y audios
+  content: string;
+  items: NoteItem[];
+  attachments: MediaAttachment[];
   isPinned: boolean;
-  createdAt: string;             // ISO date
-  updatedAt: string;             // ISO date
+  createdAt: string;
+  updatedAt: string;
 }
 
 interface NoteItem {
@@ -182,7 +110,7 @@ interface NoteItem {
 interface MediaAttachment {
   id: string;
   type: 'image' | 'audio';
-  data: string;                  // base64 encoded
+  data: string;  // base64
   mimeType: string;
   createdAt: string;
 }
@@ -190,160 +118,90 @@ interface MediaAttachment {
 
 ---
 
-## Comandos de Desarrollo
+## Funcionalidades v1.0
+
+- **Notas:** CRUD completo, 3 categorias con colores, subcategorias/tags
+- **Checklists:** Items con toggle desde dashboard y editor
+- **Audio:** Grabacion WebM, modo conduccion pantalla completa
+- **Imagenes:** Adjuntar y eliminar, vista previa
+- **Busqueda:** Filtro en tiempo real por titulo/contenido
+- **Tema:** Oscuro/claro con toggle
+- **Storage:** IndexedDB local (offline-first)
+- **Sync:** Supabase bidireccional, config desde Settings
+- **Backup:** Export/Import JSON
+- **PWA:** Instalable, funciona offline, iconos custom
+
+---
+
+## Comandos
 
 ```bash
-# Instalar dependencias
-npm install
-
-# Iniciar servidor de desarrollo (http://localhost:5173)
-npm run dev
-
-# Compilar para produccion (genera carpeta dist/)
-npm run build
-
-# Previsualizar build de produccion
-npm run preview
+npm install      # Instalar dependencias
+npm run dev      # Dev server (localhost:5173)
+npm run build    # Build produccion (dist/)
+npm run preview  # Preview build local
 ```
 
 ---
 
-## Deploy Automatico
+## Deploy
 
-El proyecto esta configurado con **deploy automatico**:
+Automatico via Vercel. Al hacer push a `main`:
 
-1. Hacer cambios en el codigo local
-2. Commit y push a GitHub:
-   ```bash
-   git add .
-   git commit -m "descripcion del cambio"
-   git push
-   ```
-3. Vercel detecta el push y hace deploy automaticamente
-4. En ~30 segundos la app esta actualizada en produccion
+```bash
+git add .
+git commit -m "descripcion"
+git push
+```
+
+Vercel detecta y deploya en ~30 segundos.
 
 ---
 
-## Historial de Cambios
+## Arquitectura
 
-### v1.0.0 - 11 Dic 2025 - RELEASE INICIAL
+```
+[Usuario] → [PWA/Browser]
+              ↓
+         [IndexedDB] ← fuente de verdad local
+              ↓
+         [Supabase] ← sync opcional cuando hay conexion
+```
 
-**Sesion 11 Dic 2025 - Deploy a Produccion**
-
-Completado el ciclo completo de deployment:
-
-1. **GitHub**
-   - Creada cuenta nueva para proyectos personales (fnosieski@hotmail.com)
-   - Usuario: benferk808
-   - Repositorio: nexusnotes
-   - Commit inicial con toda la app
-
-2. **Vercel**
-   - Conectado con GitHub
-   - Deploy automatico configurado
-   - URL: https://nexusnotes-steel.vercel.app/
-
-3. **Rebranding**
-   - Nombre cambiado de "OmniNotes" a "Nexus Notes"
-   - Actualizado en: constants.ts, index.html, manifest.json, App.tsx, CLAUDE.md, README.md
-
-4. **Verificacion**
-   - App funcionando en PC y celular
-   - Supabase sync operativo entre dispositivos
-   - PWA lista para instalar (pendiente iconos propios)
-
-**Build Info:**
-- Bundle size: 1,286 KB (281 KB gzip)
-- Build time: ~4 segundos
-- Warning de chunk size (no critico, optimizable en futuro)
-
----
-
-### Sesion 10 Dic 2025 (tarde) - Configuracion Supabase
-
-- Reactivacion del proyecto Supabase (estaba pausado)
-- Creacion de tabla `notes`
-- Configuracion de sync bidireccional
-- Verificacion de funcionamiento
-
----
-
-### Sesion 10 Dic 2025 (manana) - Limpieza de Gemini
-
-- Eliminado completamente Google Gemini AI
-- App 100% gratuita sin APIs de pago
-
----
-
-## Proximas Mejoras (Backlog)
-
-### Prioridad Alta
-- [ ] Crear iconos PWA propios (192x192 y 512x512)
-- [ ] Instalar Tailwind como dependencia (eliminar CDN warning)
-
-### Prioridad Media
-- [ ] Code-splitting para reducir bundle size
-- [ ] Autenticacion opcional (proteger notas con password)
-- [ ] Notificaciones para recordatorios
-
-### Prioridad Baja
-- [ ] Modo offline mejorado con indicador de estado
-- [ ] Exportar notas individuales
-- [ ] Temas de colores personalizables
-- [ ] Busqueda por tags/etiquetas
+- **Offline-first:** Todo funciona sin internet
+- **Sync inteligente:** Merge por timestamp updatedAt
+- **Sin backend propio:** Estatico + Supabase
 
 ---
 
 ## Warnings Conocidos (no criticos)
 
-1. **Tailwind CDN warning** - "should not be used in production"
-   - Funciona correctamente, es solo recomendacion
-
-2. **Chunk size warning** - Bundle > 500KB
-   - Optimizable con code-splitting en futuro
-
-3. **apple-mobile-web-app-capable deprecated**
-   - Meta tag antiguo pero funcional
+1. **Tailwind CDN** - "should not be used in production" → funciona OK
+2. **Multiple GoTrueClient** - warning de Supabase dev → no afecta
 
 ---
 
-## Notas Tecnicas
+## Backlog Futuro
 
-### Arquitectura
-- **Offline-first:** IndexedDB es la fuente de verdad local
-- **Sync opcional:** Supabase sincroniza cuando hay conexion
-- **Sin backend propio:** Todo es estatico + Supabase
-
-### Seguridad
-- Datos locales en IndexedDB (privado del navegador)
-- Sync via Supabase (RLS desactivado por ahora)
-- Sin tracking, analytics ni publicidad
-- HTTPS obligatorio (Vercel lo provee)
-
-### PWA
-- Service Worker cachea assets para offline
-- Manifest permite instalacion nativa
-- Funciona como app standalone
+- [ ] Instalar Tailwind como dependencia (eliminar CDN)
+- [ ] Code-splitting para reducir bundle (1.2MB → menor)
+- [ ] Autenticacion opcional
+- [ ] Notificaciones/recordatorios
+- [ ] Temas de colores custom
 
 ---
 
-## Objetivo del Proyecto
+## Historial
 
-App de notas personal para:
-- Apuntes rapidos mientras juegas
-- Tareas y recordatorios de trabajo
-- Notas personales y listas de compras
-- Grabar ideas de voz mientras conduces
-
-**Meta alcanzada:** Usar la misma app en PC, celular y tablet, con todas las notas sincronizadas.
-
-**Bonus:** Mantener activa la cuenta de Supabase del Sistema de Compras FERABEN.
+| Fecha | Version | Cambios |
+|-------|---------|---------|
+| 11 Dic 2025 | 1.0.0 | Release inicial: GitHub + Vercel + iconos PWA |
+| 10 Dic 2025 | 0.9 | Config Supabase, limpieza Gemini |
 
 ---
 
 ## Creditos
 
-- **Desarrollo inicial:** Gemini 2.5 Pro
-- **Optimizacion, limpieza y deploy:** Claude (Anthropic) - Dic 2025
-- **Configuracion Supabase:** Claude (Anthropic) - 10 Dic 2025
-- **Uso:** Personal y comercial libre
+- Desarrollo inicial: Gemini 2.5 Pro
+- Deploy y optimizacion: Claude (Anthropic)
+- Uso: Personal y comercial libre
