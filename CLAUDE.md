@@ -1,7 +1,43 @@
 # Nexus Notes - Documentacion del Proyecto
 
-> **Ultima actualizacion:** 10 de Diciembre 2025
-> **Estado:** Supabase configurado y funcionando. Pendiente: Deploy a Vercel + GitHub
+> **Version:** 1.0.0
+> **Ultima actualizacion:** 11 de Diciembre 2025
+> **Estado:** PRODUCCION - Deploy completo en Vercel
+
+---
+
+## Links Importantes
+
+| Recurso | URL |
+|---------|-----|
+| **App en Produccion** | https://nexusnotes-steel.vercel.app/ |
+| **Repositorio GitHub** | https://github.com/benferk808/nexusnotes |
+| **Vercel Dashboard** | https://vercel.com (cuenta fnosieski@hotmail.com) |
+| **Supabase Dashboard** | https://supabase.com/dashboard (proyecto Sistema-compras-mare) |
+
+---
+
+## Cuentas y Accesos
+
+### GitHub (proyectos personales)
+- **Email:** fnosieski@hotmail.com
+- **Usuario:** benferk808
+- **Repo:** nexusnotes
+
+### Vercel
+- **Email:** fnosieski@hotmail.com
+- **Proyecto:** nexusnotes
+- **URL:** https://nexusnotes-steel.vercel.app/
+
+### Supabase (compartido con FERABEN)
+- **Proyecto:** Sistema-compras-mare
+- **URL:** `https://qjiovckirghjxamqcfuv.supabase.co`
+- **API Key (Legacy anon public):**
+```
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFqaW92Y2tpcmdoanhhbXFjZnV2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQzNjEwOTEsImV4cCI6MjA2OTkzNzA5MX0.5GhcsREBY_nnfCiTjuwogWlT6fBzv2lT3xljWQISU1s
+```
+- **Tabla:** `notes` (id TEXT, updated_at TIMESTAMP, data JSONB)
+- **RLS:** Desactivado
 
 ---
 
@@ -15,7 +51,7 @@ Nexus Notes es una aplicacion de notas personales **offline-first** con sincroni
 
 ---
 
-## Estructura Actual del Proyecto
+## Estructura del Proyecto
 
 ```
 C:\Users\Usuario\Omninotes/
@@ -24,13 +60,15 @@ C:\Users\Usuario\Omninotes/
 ├── index.tsx                  # Entry point de React
 ├── index.html                 # HTML base con meta tags PWA
 ├── types.ts                   # Tipos TypeScript (Note, NoteItem, etc.)
-├── constants.ts               # Categorias y configuracion
+├── constants.ts               # Categorias y configuracion (APP_TITLE)
 ├── package.json               # Dependencias del proyecto
 ├── tsconfig.json              # Configuracion TypeScript
 ├── vite.config.ts             # Configuracion Vite (build, dev server)
 ├── manifest.json              # Manifest PWA para instalacion
 ├── service-worker.js          # Service Worker para funcionamiento offline
 ├── CLAUDE.md                  # Este archivo - documentacion del proyecto
+├── README.md                  # README para GitHub
+├── .gitignore                 # Archivos excluidos de git
 │
 ├── components/
 │   ├── NoteCard.tsx           # Tarjeta de nota en el dashboard
@@ -55,15 +93,17 @@ C:\Users\Usuario\Omninotes/
 |------|------------|---------|
 | Framework | React | 19.2.1 |
 | Lenguaje | TypeScript | 5.8.2 |
-| Build Tool | Vite | 6.2.0 |
+| Build Tool | Vite | 6.4.1 |
 | Estilos | Tailwind CSS | 3.x (via CDN) |
 | Iconos | Lucide React | 0.556.0 |
 | Backend | Supabase | 2.39.0 |
 | Storage Local | IndexedDB | Nativo del navegador |
+| Hosting | Vercel | - |
+| Repositorio | GitHub | - |
 
 ---
 
-## Funcionalidades Actuales
+## Funcionalidades v1.0
 
 ### Gestion de Notas
 - [x] Crear, editar y eliminar notas
@@ -96,16 +136,18 @@ C:\Users\Usuario\Omninotes/
 - [x] Import de notas desde archivo JSON (fusionar o reemplazar)
 
 ### Sincronizacion Cloud (Supabase)
-- [x] Configuracion desde modal de Settings
+- [x] Configuracion desde modal de Settings (URL + API Key)
 - [x] Sync bidireccional (local <-> cloud)
 - [x] Merge inteligente por timestamp
 - [x] Funciona offline-first (primero local, luego sync)
+- [x] Configuracion persistente en localStorage
 
 ### PWA (Progressive Web App)
 - [x] Service Worker para cache y offline
 - [x] Manifest.json para instalacion
 - [x] Meta tags para iOS y Android
 - [x] Funciona sin conexion a internet
+- [x] HTTPS via Vercel
 
 ### Interfaz
 - [x] Tema oscuro y claro (toggle en header)
@@ -154,7 +196,7 @@ interface MediaAttachment {
 # Instalar dependencias
 npm install
 
-# Iniciar servidor de desarrollo (http://localhost:3000)
+# Iniciar servidor de desarrollo (http://localhost:5173)
 npm run dev
 
 # Compilar para produccion (genera carpeta dist/)
@@ -166,151 +208,122 @@ npm run preview
 
 ---
 
+## Deploy Automatico
+
+El proyecto esta configurado con **deploy automatico**:
+
+1. Hacer cambios en el codigo local
+2. Commit y push a GitHub:
+   ```bash
+   git add .
+   git commit -m "descripcion del cambio"
+   git push
+   ```
+3. Vercel detecta el push y hace deploy automaticamente
+4. En ~30 segundos la app esta actualizada en produccion
+
+---
+
 ## Historial de Cambios
 
-### Sesion 10 Dic 2025 (tarde) - Configuracion Supabase COMPLETADA
+### v1.0.0 - 11 Dic 2025 - RELEASE INICIAL
 
-**Contexto:** La app se conecto a la misma cuenta de Supabase que usa el Sistema de Compras de FERABEN. Esto resuelve el problema de que Supabase pausaba el proyecto por inactividad.
+**Sesion 11 Dic 2025 - Deploy a Produccion**
 
-**Pasos realizados:**
+Completado el ciclo completo de deployment:
 
-1. **Reactivacion de Supabase**
-   - El proyecto "Sistema-compras-mare" estaba pausado
-   - Se reactivo desde el dashboard de Supabase
-   - Las API keys se regeneraron (Supabase ahora usa nuevo sistema de keys)
+1. **GitHub**
+   - Creada cuenta nueva para proyectos personales (fnosieski@hotmail.com)
+   - Usuario: benferk808
+   - Repositorio: nexusnotes
+   - Commit inicial con toda la app
 
-2. **Creacion de tabla `notes`**
-   - Se ejecuto en SQL Editor:
-   ```sql
-   CREATE TABLE notes (
-     id TEXT PRIMARY KEY,
-     updated_at TIMESTAMP WITH TIME ZONE,
-     data JSONB
-   );
-   ```
-   - RLS desactivado (la app no tiene autenticacion por ahora)
+2. **Vercel**
+   - Conectado con GitHub
+   - Deploy automatico configurado
+   - URL: https://nexusnotes-steel.vercel.app/
 
-3. **Configuracion en la app**
-   - URL: `https://qjiovckirghjxamqcfuv.supabase.co`
-   - API Key: Se usa la "Legacy anon public key" (formato eyJ...)
-   - Nota: Supabase ahora muestra "Publishable key" pero hay que usar las legacy keys
+3. **Rebranding**
+   - Nombre cambiado de "OmniNotes" a "Nexus Notes"
+   - Actualizado en: constants.ts, index.html, manifest.json, App.tsx, CLAUDE.md, README.md
 
 4. **Verificacion**
-   - Se creo nota de prueba
-   - Se verifico que aparece en Supabase Table Editor
-   - Sin errores en consola F12
+   - App funcionando en PC y celular
+   - Supabase sync operativo entre dispositivos
+   - PWA lista para instalar (pendiente iconos propios)
 
-**Resultado:** Sincronizacion funcionando correctamente.
+**Build Info:**
+- Bundle size: 1,286 KB (281 KB gzip)
+- Build time: ~4 segundos
+- Warning de chunk size (no critico, optimizable en futuro)
+
+---
+
+### Sesion 10 Dic 2025 (tarde) - Configuracion Supabase
+
+- Reactivacion del proyecto Supabase (estaba pausado)
+- Creacion de tabla `notes`
+- Configuracion de sync bidireccional
+- Verificacion de funcionamiento
 
 ---
 
 ### Sesion 10 Dic 2025 (manana) - Limpieza de Gemini
 
-**Eliminado completamente Google Gemini AI:**
-- Borrado `services/geminiService.ts`
-- Borrado `.env.local` (contenia GEMINI_API_KEY)
-- Limpiado `NoteEditor.tsx`:
-  - Removido boton "Mejorar Texto"
-  - Removido boton "Transcribir" en audios
-  - Removidos estados isProcessingAI, transcribingId
-  - Removidos imports de Wand2, Loader2
-- Limpiado `package.json`: removida dependencia `@google/genai`
-- Limpiado `vite.config.ts`: removidas referencias a GEMINI_API_KEY
-- Limpiado `constants.ts`: removido GEMINI_MODEL
-
-**Resultado:** App 100% gratuita sin APIs de pago.
+- Eliminado completamente Google Gemini AI
+- App 100% gratuita sin APIs de pago
 
 ---
 
-## CONFIGURACION ACTUAL DE SUPABASE
+## Proximas Mejoras (Backlog)
 
-### Proyecto
-- **Nombre:** Sistema-compras-mare (compartido con Sistema de Compras FERABEN)
-- **URL:** `https://qjiovckirghjxamqcfuv.supabase.co`
+### Prioridad Alta
+- [ ] Crear iconos PWA propios (192x192 y 512x512)
+- [ ] Instalar Tailwind como dependencia (eliminar CDN warning)
 
-### API Key (Legacy anon public)
-```
-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFqaW92Y2tpcmdoanhhbXFjZnV2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQzNjEwOTEsImV4cCI6MjA2OTkzNzA5MX0.5GhcsREBY_nnfCiTjuwogWlT6fBzv2lT3xljWQISU1s
-```
+### Prioridad Media
+- [ ] Code-splitting para reducir bundle size
+- [ ] Autenticacion opcional (proteger notas con password)
+- [ ] Notificaciones para recordatorios
 
-### Tabla
-```sql
-CREATE TABLE notes (
-  id TEXT PRIMARY KEY,
-  updated_at TIMESTAMP WITH TIME ZONE,
-  data JSONB
-);
-```
-
-### Notas importantes
-- RLS esta desactivado (cualquiera con la key puede leer/escribir)
-- Los audios e imagenes se guardan como base64 dentro del campo `data` (JSONB)
-- No se usa Supabase Storage, todo va en la tabla
+### Prioridad Baja
+- [ ] Modo offline mejorado con indicador de estado
+- [ ] Exportar notas individuales
+- [ ] Temas de colores personalizables
+- [ ] Busqueda por tags/etiquetas
 
 ---
 
-## PROXIMOS PASOS (Pendientes)
-
-### 1. Subir a GitHub
-- [ ] Crear repositorio en GitHub (cuenta fnosieski@gmail.com o ferabensrl@gmail.com)
-- [ ] Inicializar git en el proyecto
-- [ ] Crear .gitignore (node_modules, dist, .env, etc.)
-- [ ] Hacer commit inicial
-- [ ] Push a GitHub
-
-### 2. Deploy a Vercel
-- [ ] Conectar Vercel con el repositorio de GitHub
-- [ ] Configurar build command: `npm run build`
-- [ ] Configurar output directory: `dist`
-- [ ] Obtener URL publica con HTTPS (ej: nexusnotes.vercel.app)
-- [ ] Verificar que la app carga correctamente
-
-### 3. Crear Iconos PWA Profesionales
-- [ ] Disenar o generar icono de Nexus Notes
-- [ ] Crear versiones 192x192 y 512x512 pixeles
-- [ ] Reemplazar placeholders en manifest.json
-- [ ] Probar instalacion en dispositivos
-
-### Resultado Final
-Una vez completados estos 3 pasos:
-- Podras abrir la app desde cualquier navegador con la URL de Vercel
-- Podras "Instalar" la app en PC, Android, iOS, tablet
-- Las notas se sincronizaran automaticamente entre dispositivos
-- Funcionara offline y sincronizara cuando haya conexion
-- El Sistema de Compras nunca mas se pausara por inactividad
-
----
-
-## Warnings conocidos (no criticos)
-
-Estos warnings aparecen en F12 pero no afectan el funcionamiento:
+## Warnings Conocidos (no criticos)
 
 1. **Tailwind CDN warning** - "should not be used in production"
-   - Solucion futura: instalar Tailwind como dependencia
+   - Funciona correctamente, es solo recomendacion
 
-2. **Multiple GoTrueClient** - "Multiple instances detected"
-   - Es un warning de desarrollo, no afecta
+2. **Chunk size warning** - Bundle > 500KB
+   - Optimizable con code-splitting en futuro
 
 3. **apple-mobile-web-app-capable deprecated**
-   - Meta tag antiguo, funciona pero hay uno nuevo
-
-4. **picsum.photos 503** - Error cargando iconos placeholder
-   - Se resuelve al crear iconos propios
+   - Meta tag antiguo pero funcional
 
 ---
 
 ## Notas Tecnicas
 
-### PWA - Requisitos
-- HTTPS obligatorio (Vercel lo incluye gratis)
-- Service Worker registrado
-- Manifest.json con iconos validos
+### Arquitectura
+- **Offline-first:** IndexedDB es la fuente de verdad local
+- **Sync opcional:** Supabase sincroniza cuando hay conexion
+- **Sin backend propio:** Todo es estatico + Supabase
 
 ### Seguridad
-- Los datos se guardan localmente en IndexedDB (privado del navegador)
-- Supabase sincroniza en la nube
-- No hay tracking, analytics ni publicidad
-- Sin autenticacion por ahora (cualquiera con el link puede usar la app)
+- Datos locales en IndexedDB (privado del navegador)
+- Sync via Supabase (RLS desactivado por ahora)
+- Sin tracking, analytics ni publicidad
+- HTTPS obligatorio (Vercel lo provee)
+
+### PWA
+- Service Worker cachea assets para offline
+- Manifest permite instalacion nativa
+- Funciona como app standalone
 
 ---
 
@@ -322,15 +335,15 @@ App de notas personal para:
 - Notas personales y listas de compras
 - Grabar ideas de voz mientras conduces
 
-**Meta:** Poder usar la misma app en PC, celular y tablet, con todas las notas sincronizadas.
+**Meta alcanzada:** Usar la misma app en PC, celular y tablet, con todas las notas sincronizadas.
 
-**Bonus:** Mantener activa la cuenta de Supabase del Sistema de Compras.
+**Bonus:** Mantener activa la cuenta de Supabase del Sistema de Compras FERABEN.
 
 ---
 
 ## Creditos
 
 - **Desarrollo inicial:** Gemini 2.5 Pro
-- **Optimizacion y limpieza:** Claude (Anthropic)
+- **Optimizacion, limpieza y deploy:** Claude (Anthropic) - Dic 2025
 - **Configuracion Supabase:** Claude (Anthropic) - 10 Dic 2025
 - **Uso:** Personal y comercial libre
