@@ -1,0 +1,8 @@
+{
+  "name": "OmniNotes",
+  "description": "A personal offline-first notes app for Gaming, Work, and Life with AI-powered organization.",
+  "requestFramePermissions": [
+    "microphone",
+    "camera"
+  ]
+}
