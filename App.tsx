@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Note, Category } from './types';
-import { getNotes, saveNotes, getSettings, saveSettings, initDB } from './services/storageService';
+import { getNotes, saveNotes, deleteNote, getSettings, saveSettings, initDB } from './services/storageService';
 import { TabNavigation } from './components/TabNavigation';
 import { NoteCard } from './components/NoteCard';
 import { NoteEditor } from './components/NoteEditor';
@@ -90,10 +90,10 @@ export const App: React.FC = () => {
     const id = deleteModalState.noteId;
     if (!id) return;
 
-    const updatedNotes = notes.filter(n => n.id !== id);
+    // Delete from local IndexedDB AND from Supabase cloud
+    const updatedNotes = await deleteNote(id, notes);
     setNotes(updatedNotes);
-    await saveNotes(updatedNotes);
-    
+
     // Also close editor if we deleted the note currently being edited
     if (editingNote && editingNote.id === id) {
         setIsEditorOpen(false);

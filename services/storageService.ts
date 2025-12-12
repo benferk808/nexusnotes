@@ -1,5 +1,5 @@
 import { Note, AppSettings } from '../types';
-import { initSupabase, syncNotesToCloud, fetchNotesFromCloud } from './supabaseService';
+import { initSupabase, syncNotesToCloud, fetchNotesFromCloud, deleteNoteFromCloud } from './supabaseService';
 
 const DB_NAME = 'OmniNotesDB';
 const STORE_NAME = 'notes';
@@ -137,6 +137,25 @@ export const saveNotes = async (notes: Note[]): Promise<void> => {
             else console.log("Cloud save success");
         });
     }
+};
+
+export const deleteNote = async (noteId: string, currentNotes: Note[]): Promise<Note[]> => {
+    // 1. Filter out the note locally
+    const updatedNotes = currentNotes.filter(n => n.id !== noteId);
+
+    // 2. Save to IndexedDB
+    await saveNotesLocal(updatedNotes);
+
+    // 3. Delete from Cloud (if connected)
+    const settings = getSettings();
+    if (settings.supabaseConfig?.enabled) {
+        deleteNoteFromCloud(noteId).then((res) => {
+            if (res.error) console.error("Cloud delete failed", res.error);
+            else console.log("Cloud delete success");
+        });
+    }
+
+    return updatedNotes;
 };
 
 // --- Settings ---

@@ -44,6 +44,24 @@ export const syncNotesToCloud = async (notes: Note[]) => {
   }
 };
 
+export const deleteNoteFromCloud = async (noteId: string) => {
+  if (!supabase) return { error: "Not connected" };
+
+  try {
+    const { error } = await supabase
+      .from('notes')
+      .delete()
+      .eq('id', noteId);
+
+    if (error) throw error;
+
+    return { success: true };
+  } catch (error) {
+    console.error("Cloud Sync Error (Delete):", error);
+    return { error };
+  }
+};
+
 export const fetchNotesFromCloud = async (): Promise<Note[] | null> => {
   if (!supabase) return null;
 
