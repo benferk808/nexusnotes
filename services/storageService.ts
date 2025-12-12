@@ -83,39 +83,58 @@ const saveNotesLocal = async (notes: Note[]): Promise<void> => {
 export const getNotes = async (): Promise<Note[]> => {
     // 1. Always load local first (Instant UI)
     let notes = await getNotesLocal();
-    
+
     // 2. If connected to cloud, try to fetch and merge
     const settings = getSettings();
     if (settings.supabaseConfig?.enabled) {
-        // Run in background so we don't block UI, but for this simpler implementation
-        // we might want to wait if it's the very first load. 
-        // Let's do a smart merge: Get Cloud, if Cloud has newer items, update Local.
         try {
             const cloudNotes = await fetchNotesFromCloud();
             if (cloudNotes) {
-                // Merge Logic: create a map of all notes by ID
-                const noteMap = new Map<string, Note>();
-                
-                // Add local notes
-                notes.forEach(n => noteMap.set(n.id, n));
-                
-                let hasChanges = false;
-                
-                // Overlay cloud notes if they are newer
+                // Cloud is source of truth for WHICH notes exist
+                // Local can have newer VERSIONS of notes that exist in cloud
+                const cloudNoteMap = new Map<string, Note>();
+                cloudNotes.forEach(n => cloudNoteMap.set(n.id, n));
+
+                const mergedNotes: Note[] = [];
+                const notesToUpload: Note[] = [];
+                let hasLocalChanges = false;
+
+                // Process cloud notes (these definitely should exist)
                 cloudNotes.forEach(cloudNote => {
-                    const localNote = noteMap.get(cloudNote.id);
-                    if (!localNote || new Date(cloudNote.updatedAt) > new Date(localNote.updatedAt)) {
-                        noteMap.set(cloudNote.id, cloudNote);
-                        hasChanges = true;
+                    const localNote = notes.find(n => n.id === cloudNote.id);
+                    if (localNote && new Date(localNote.updatedAt) > new Date(cloudNote.updatedAt)) {
+                        // Local is newer, keep local version and mark for upload
+                        mergedNotes.push(localNote);
+                        notesToUpload.push(localNote);
+                    } else {
+                        // Cloud is newer or same, use cloud version
+                        mergedNotes.push(cloudNote);
+                        if (localNote) hasLocalChanges = true;
                     }
                 });
-                
-                if (hasChanges) {
-                    notes = Array.from(noteMap.values());
-                    // Update local cache
-                    await saveNotesLocal(notes); 
-                    console.log("Synced with cloud: Notes updated.");
+
+                // Check for local-only notes (not in cloud)
+                // These were deleted on another device - don't include them
+                const deletedCount = notes.filter(n => !cloudNoteMap.has(n.id)).length;
+                if (deletedCount > 0) {
+                    console.log(`Sync: Removed ${deletedCount} notes deleted on other devices`);
+                    hasLocalChanges = true;
                 }
+
+                // Update local cache if there were changes
+                if (hasLocalChanges || deletedCount > 0) {
+                    await saveNotesLocal(mergedNotes);
+                    console.log("Synced with cloud: Local cache updated.");
+                }
+
+                // Upload local changes to cloud (fire and forget)
+                if (notesToUpload.length > 0) {
+                    syncNotesToCloud(notesToUpload).then(() => {
+                        console.log(`Synced ${notesToUpload.length} newer local notes to cloud`);
+                    });
+                }
+
+                notes = mergedNotes;
             }
         } catch (e) {
             console.warn("Could not sync with cloud on load", e);
