@@ -195,8 +195,41 @@ Vercel detecta y deploya en ~30 segundos.
 
 | Fecha | Version | Cambios |
 |-------|---------|---------|
+| 12 Dic 2025 | 1.0.1 | Fix: Sync de eliminacion entre dispositivos |
 | 11 Dic 2025 | 1.0.0 | Release inicial: GitHub + Vercel + iconos PWA |
 | 10 Dic 2025 | 0.9 | Config Supabase, limpieza Gemini |
+
+---
+
+## Bugs Resueltos (Referencia Tecnica)
+
+### Bug: Notas eliminadas reaparecen (12 Dic 2025)
+
+**Sintoma:** Al eliminar una nota, parecia eliminarse, pero al refrescar la app volvia a aparecer. Peor aun, en otros dispositivos (cel/tablet) la nota nunca desaparecia.
+
+**Causa raiz (2 problemas):**
+
+1. **No se eliminaba de Supabase:** `syncNotesToCloud()` solo hacia UPSERT, nunca DELETE. La nota se borraba de IndexedDB local pero seguia en la nube.
+
+2. **Sync no detectaba eliminaciones:** `getNotes()` hacia merge unidireccional - agregaba notas del cloud al local, pero nunca eliminaba notas locales que ya no existian en cloud.
+
+**Solucion implementada:**
+
+1. **Nuevo:** `deleteNoteFromCloud(noteId)` en `supabaseService.ts` - ejecuta DELETE en Supabase.
+
+2. **Nuevo:** `deleteNote(noteId, notes)` en `storageService.ts` - elimina de IndexedDB + llama a deleteNoteFromCloud.
+
+3. **Modificado:** `getNotes()` en `storageService.ts` - nueva logica de merge donde el **cloud es fuente de verdad** sobre que notas EXISTEN:
+   - Notas en cloud pero no en local → se agregan
+   - Notas en local pero no en cloud → se eliminan (fueron borradas en otro dispositivo)
+   - Notas en ambos → se usa la version con updatedAt mas reciente
+
+**Archivos modificados:**
+- `services/supabaseService.ts` (nueva funcion)
+- `services/storageService.ts` (nueva funcion + logica de merge)
+- `App.tsx` (usa deleteNote en handleConfirmDelete)
+
+**Commits:** `a7579ad`, `a231820`
 
 ---
 
