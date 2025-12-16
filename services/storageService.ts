@@ -1,10 +1,12 @@
-import { Note, AppSettings } from '../types';
+import { Note, AppSettings, CategoryConfig } from '../types';
+import { DEFAULT_CATEGORIES } from '../constants';
 import { initSupabase, syncNotesToCloud, fetchNotesFromCloud, deleteNoteFromCloud } from './supabaseService';
 
 const DB_NAME = 'OmniNotesDB';
 const STORE_NAME = 'notes';
 const DB_VERSION = 1;
 const SETTINGS_KEY = 'omninotes_settings_v2'; // Bumped version
+const CATEGORIES_KEY = 'omninotes_categories_v1';
 
 // --- IndexedDB Helpers ---
 
@@ -194,4 +196,27 @@ export const saveSettings = (settings: AppSettings) => {
   if (settings.supabaseConfig) {
       initSupabase(settings.supabaseConfig);
   }
+};
+
+// --- Categories ---
+
+export const getCategories = (): CategoryConfig[] => {
+  try {
+    const data = localStorage.getItem(CATEGORIES_KEY);
+    if (data) {
+      const parsed = JSON.parse(data);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed;
+      }
+    }
+    // First time or empty - save and return defaults
+    saveCategories(DEFAULT_CATEGORIES);
+    return DEFAULT_CATEGORIES;
+  } catch {
+    return DEFAULT_CATEGORIES;
+  }
+};
+
+export const saveCategories = (categories: CategoryConfig[]): void => {
+  localStorage.setItem(CATEGORIES_KEY, JSON.stringify(categories));
 };

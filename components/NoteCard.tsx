@@ -1,6 +1,6 @@
 import React from 'react';
 import { Note } from '../types';
-import { Clock, Image as ImageIcon, Mic, Trash2, Check } from 'lucide-react';
+import { Clock, Image as ImageIcon, Mic, Trash2, Check, Bell, CalendarDays } from 'lucide-react';
 
 interface NoteCardProps {
   note: Note;
@@ -12,10 +12,63 @@ interface NoteCardProps {
 export const NoteCard: React.FC<NoteCardProps> = ({ note, onClick, onDelete, onToggleItem }) => {
   const hasImages = note.attachments.some(a => a.type === 'image');
   const hasAudio = note.attachments.some(a => a.type === 'audio');
-  
+  const hasReminder = note.reminder?.enabled;
+  const hasScheduledDate = !!note.scheduledDate;
+
   // Format relative time loosely
   const date = new Date(note.createdAt);
   const timeStr = date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+
+  // Format scheduled date (just date, no time)
+  const formatScheduledDate = () => {
+    if (!note.scheduledDate) return null;
+    const dt = new Date(note.scheduledDate + 'T00:00:00'); // Add time to avoid timezone issues
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const isToday = dt.toDateString() === today.toDateString();
+    const isTomorrow = dt.toDateString() === tomorrow.toDateString();
+    const isPast = dt < today;
+
+    let dateStr = '';
+    if (isToday) {
+      dateStr = 'Hoy';
+    } else if (isTomorrow) {
+      dateStr = 'Manana';
+    } else {
+      dateStr = dt.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' });
+    }
+    return { text: dateStr, isPast };
+  };
+
+  // Format reminder date
+  const formatReminderDate = () => {
+    if (!note.reminder?.enabled) return null;
+    const dt = new Date(note.reminder.datetime);
+    const today = new Date();
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const isToday = dt.toDateString() === today.toDateString();
+    const isTomorrow = dt.toDateString() === tomorrow.toDateString();
+    const isPast = dt < today;
+
+    let dateStr = '';
+    if (isToday) {
+      dateStr = 'Hoy';
+    } else if (isTomorrow) {
+      dateStr = 'Manana';
+    } else {
+      dateStr = dt.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+    }
+    const timeStr = dt.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+    return { text: `${dateStr} ${timeStr}`, isPast };
+  };
+
+  const scheduledInfo = formatScheduledDate();
+  const reminderInfo = formatReminderDate();
 
   const handleCheckboxClick = (e: React.MouseEvent, itemId: string) => {
     e.stopPropagation(); // Stop opening the editor
@@ -29,12 +82,34 @@ export const NoteCard: React.FC<NoteCardProps> = ({ note, onClick, onDelete, onT
     >
       <div className="flex justify-between items-start mb-2 pr-6">
         <div>
-          {note.subcategory && (
-            <span className="inline-block px-2 py-0.5 rounded text-xs font-semibold bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 mb-1">
-              {note.subcategory}
-            </span>
-          )}
-          <h3 className="font-bold text-lg text-gray-900 dark:text-gray-100 line-clamp-1">{note.title || "Sin título"}</h3>
+          <div className="flex flex-wrap gap-1 mb-1">
+            {note.subcategory && (
+              <span className="inline-block px-2 py-0.5 rounded text-xs font-semibold bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                {note.subcategory}
+              </span>
+            )}
+            {hasScheduledDate && scheduledInfo && (
+              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold ${
+                scheduledInfo.isPast
+                  ? 'bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-400'
+                  : 'bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300'
+              }`}>
+                <CalendarDays size={10} />
+                {scheduledInfo.text}
+              </span>
+            )}
+            {hasReminder && reminderInfo && (
+              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold ${
+                reminderInfo.isPast
+                  ? 'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300'
+                  : 'bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300'
+              }`}>
+                <Bell size={10} />
+                {reminderInfo.text}
+              </span>
+            )}
+          </div>
+          <h3 className="font-bold text-lg text-gray-900 dark:text-gray-100 line-clamp-1">{note.title || "Sin titulo"}</h3>
         </div>
       </div>
 

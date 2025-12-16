@@ -1,17 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { AppSettings, SupabaseConfig } from '../types';
 import { getSettings, saveSettings } from '../services/storageService';
-import { X, Cloud, Save, CheckCircle, AlertCircle, Database } from 'lucide-react';
+import { X, Cloud, Save, CheckCircle, AlertCircle, Database, FolderCog, Bell, BellOff } from 'lucide-react';
 import { initSupabase } from '../services/supabaseService';
+import { requestNotificationPermission, getNotificationPermission, isNotificationSupported } from '../services/notificationService';
 
 interface SettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onOpenCategoryManager: () => void;
 }
 
-export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
+export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onOpenCategoryManager }) => {
   const [config, setConfig] = useState<SupabaseConfig>({ url: '', key: '', enabled: false });
   const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [notificationStatus, setNotificationStatus] = useState<NotificationPermission | 'unsupported'>('default');
+  const [requestingPermission, setRequestingPermission] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -19,8 +23,23 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
         if (settings.supabaseConfig) {
             setConfig(settings.supabaseConfig);
         }
+        // Check notification permission status
+        setNotificationStatus(getNotificationPermission());
     }
   }, [isOpen]);
+
+  const handleRequestNotificationPermission = async () => {
+    setRequestingPermission(true);
+    const granted = await requestNotificationPermission();
+    setNotificationStatus(granted ? 'granted' : 'denied');
+    setRequestingPermission(false);
+
+    // If granted, tell service worker to start checking reminders
+    if (granted && 'serviceWorker' in navigator) {
+      const registration = await navigator.serviceWorker.ready;
+      registration.active?.postMessage('START_REMINDER_CHECK');
+    }
+  };
 
   const handleSave = () => {
     // Test connection
@@ -60,13 +79,74 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
         </div>
 
         <div className="space-y-4">
+            {/* Category Manager Button */}
+            <button
+              onClick={() => {
+                onClose();
+                onOpenCategoryManager();
+              }}
+              className="w-full p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl border border-purple-100 dark:border-purple-800 hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-colors text-left"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-purple-100 dark:bg-purple-800 rounded-lg">
+                    <FolderCog size={20} className="text-purple-600 dark:text-purple-300" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-purple-800 dark:text-purple-300">Gestionar Categorias</h3>
+                    <p className="text-xs text-purple-600 dark:text-purple-400">Agregar, editar o eliminar categorias</p>
+                  </div>
+                </div>
+                <span className="text-purple-400">&rarr;</span>
+              </div>
+            </button>
+
+            {/* Notifications Section */}
+            <div className="p-4 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-100 dark:border-amber-800">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-amber-100 dark:bg-amber-800 rounded-lg">
+                    {notificationStatus === 'granted' ? (
+                      <Bell size={20} className="text-amber-600 dark:text-amber-300" />
+                    ) : (
+                      <BellOff size={20} className="text-amber-600 dark:text-amber-300" />
+                    )}
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-amber-800 dark:text-amber-300">Notificaciones</h3>
+                    <p className="text-xs text-amber-600 dark:text-amber-400">
+                      {notificationStatus === 'unsupported' && 'Tu navegador no soporta notificaciones'}
+                      {notificationStatus === 'granted' && 'Notificaciones activadas'}
+                      {notificationStatus === 'denied' && 'Notificaciones bloqueadas'}
+                      {notificationStatus === 'default' && 'Activa las notificaciones para recordatorios'}
+                    </p>
+                  </div>
+                </div>
+                {isNotificationSupported() && notificationStatus !== 'granted' && notificationStatus !== 'denied' && (
+                  <button
+                    onClick={handleRequestNotificationPermission}
+                    disabled={requestingPermission}
+                    className="px-3 py-1.5 bg-amber-500 text-white text-sm font-medium rounded-lg hover:bg-amber-600 transition-colors disabled:opacity-50"
+                  >
+                    {requestingPermission ? 'Activando...' : 'Activar'}
+                  </button>
+                )}
+                {notificationStatus === 'granted' && (
+                  <span className="text-green-500 text-sm font-medium">✓ Activo</span>
+                )}
+                {notificationStatus === 'denied' && (
+                  <span className="text-red-500 text-xs">Desbloquea en config. del navegador</span>
+                )}
+              </div>
+            </div>
+
             <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100 dark:border-blue-800">
                 <h3 className="font-semibold text-blue-800 dark:text-blue-300 mb-2 flex items-center gap-2">
-                    <Cloud size={16}/> Sincronización en la Nube
+                    <Cloud size={16}/> Sincronizacion en la Nube
                 </h3>
                 <p className="text-xs text-blue-600 dark:text-blue-400 leading-relaxed">
-                    Conecta tu cuenta de Supabase para sincronizar tus notas entre PC y Celular. 
-                    Tus datos se guardarán en tu propia base de datos.
+                    Conecta tu cuenta de Supabase para sincronizar tus notas entre PC y Celular.
+                    Tus datos se guardaran en tu propia base de datos.
                 </p>
             </div>
 

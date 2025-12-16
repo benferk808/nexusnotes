@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Note, Category, MediaAttachment, NoteItem } from '../types';
-import { Mic, Image as ImageIcon, X, Save, Trash2, Plus, Check, FileAudio } from 'lucide-react';
+import { Note, Category, MediaAttachment, NoteItem, Reminder } from '../types';
+import { Mic, Image as ImageIcon, X, Save, Trash2, Plus, Check, FileAudio, CalendarDays } from 'lucide-react';
+import { ReminderPicker } from './ReminderPicker';
 
 interface NoteEditorProps {
   isOpen: boolean;
@@ -17,6 +18,8 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({ isOpen, onClose, onSave,
   const [subcategory, setSubcategory] = useState('');
   const [attachments, setAttachments] = useState<MediaAttachment[]>([]);
   const [items, setItems] = useState<NoteItem[]>([]);
+  const [scheduledDate, setScheduledDate] = useState<string>('');
+  const [reminder, setReminder] = useState<Reminder | undefined>(undefined);
   const [isRecording, setIsRecording] = useState(false);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -34,6 +37,8 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({ isOpen, onClose, onSave,
         setSubcategory(initialNote.subcategory || '');
         setAttachments(initialNote.attachments);
         setItems(initialNote.items || []);
+        setScheduledDate(initialNote.scheduledDate || '');
+        setReminder(initialNote.reminder);
       } else {
         resetForm();
         setSubcategory(getDefaultSubcategory(activeCategory));
@@ -53,6 +58,8 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({ isOpen, onClose, onSave,
     setSubcategory('');
     setAttachments([]);
     setItems([]);
+    setScheduledDate('');
+    setReminder(undefined);
   };
 
   // --- Handlers ---
@@ -67,6 +74,8 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({ isOpen, onClose, onSave,
       items,
       attachments,
       isPinned: initialNote?.isPinned || false,
+      scheduledDate: scheduledDate || undefined,
+      reminder,
       createdAt: initialNote?.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
@@ -193,21 +202,57 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({ isOpen, onClose, onSave,
           {/* Metadata Row */}
           <div className="flex gap-2">
             <div className="flex-1">
-                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 uppercase">Categoría</label>
+                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 uppercase">Categoria</label>
                 <div className="px-3 py-2 bg-gray-100 dark:bg-gray-800 rounded-lg text-gray-700 dark:text-gray-300 text-sm font-medium capitalize">
                     {activeCategory}
                 </div>
             </div>
             <div className="flex-[2]">
                 <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 uppercase">Etiqueta</label>
-                <input 
-                  type="text" 
-                  value={subcategory} 
+                <input
+                  type="text"
+                  value={subcategory}
                   onChange={(e) => setSubcategory(e.target.value)}
                   placeholder={activeCategory === 'gaming' ? 'Ej. Minecraft' : 'Ej. Urgente'}
                   className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all dark:text-white"
                 />
             </div>
+          </div>
+
+          {/* Scheduled Date */}
+          <div>
+            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-2 uppercase flex items-center gap-1">
+              <CalendarDays size={12} />
+              Fecha Programada
+            </label>
+            <div className="flex items-center gap-2">
+              <input
+                type="date"
+                value={scheduledDate}
+                onChange={(e) => setScheduledDate(e.target.value)}
+                className="flex-1 px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none transition-all dark:text-white text-sm"
+              />
+              {scheduledDate && (
+                <button
+                  onClick={() => setScheduledDate('')}
+                  className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                  title="Quitar fecha"
+                >
+                  <X size={16} />
+                </button>
+              )}
+            </div>
+            {scheduledDate && (
+              <p className="text-xs text-purple-600 dark:text-purple-400 mt-1">
+                Esta tarea es para el {new Date(scheduledDate + 'T00:00:00').toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}
+              </p>
+            )}
+          </div>
+
+          {/* Reminder */}
+          <div>
+            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-2 uppercase">Recordatorio (Notificacion)</label>
+            <ReminderPicker reminder={reminder} onChange={setReminder} />
           </div>
 
           {/* Title */}
