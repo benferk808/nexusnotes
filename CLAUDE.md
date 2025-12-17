@@ -32,8 +32,20 @@ URL: https://qjiovckirghjxamqcfuv.supabase.co
 API Key (anon):
 eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFqaW92Y2tpcmdoanhhbXFjZnV2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQzNjEwOTEsImV4cCI6MjA2OTkzNzA5MX0.5GhcsREBY_nnfCiTjuwogWlT6fBzv2lT3xljWQISU1s
 
-Tabla: notes (id TEXT PK, updated_at TIMESTAMP, data JSONB)
-RLS: Desactivado
+Tablas:
+- notes (id TEXT PK, updated_at TIMESTAMP, data JSONB) - Notas
+- categories (id TEXT PK, updated_at TIMESTAMP, data JSONB) - Categorias
+
+RLS: Desactivado en ambas tablas
+```
+
+### SQL para crear tabla categories:
+```sql
+CREATE TABLE categories (
+  id TEXT PRIMARY KEY DEFAULT 'default',
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  data JSONB NOT NULL
+);
 ```
 
 ---
@@ -147,6 +159,7 @@ interface MediaAttachment {
 - **Fecha Programada:** Campo `scheduledDate` para indicar para que dia es la tarea (sin notificacion)
 - **Recordatorios:** Campo `reminder` con fecha/hora y notificacion push
 - **Categorias Dinamicas:** Agregar, editar, eliminar categorias con colores e iconos personalizados
+- **Sync de Categorias:** Las categorias se sincronizan entre dispositivos via Supabase (v2.0.1)
 - **Agrupacion por Fecha:** Notas agrupadas visualmente (Hoy, Mañana, fechas futuras, sin fecha)
 - **Notificaciones Push:** Permiso en Settings, Service Worker verifica recordatorios
 
@@ -261,6 +274,7 @@ Vercel detecta y deploya en ~30 segundos.
 
 | Fecha | Version | Cambios |
 |-------|---------|---------|
+| 17 Dic 2025 | 2.0.1 | Sync de categorias a Supabase, fix error 406, fix await faltante |
 | 16 Dic 2025 | 2.0.0 | Calendario, Recordatorios, Categorias Dinamicas, Agrupacion por Fecha |
 | 12 Dic 2025 | 1.0.1 | Fix: Sync de eliminacion entre dispositivos |
 | 11 Dic 2025 | 1.0.0 | Release inicial: GitHub + Vercel + iconos PWA |
@@ -293,6 +307,127 @@ if (noteExists) {
 **Causa:** `syncNotesToCloud()` solo hacia UPSERT, nunca DELETE.
 
 **Solucion:** Nueva funcion `deleteNoteFromCloud()` y logica de merge mejorada.
+
+### Bug: Categorias no se sincronizaban a Supabase (17 Dic 2025)
+
+**Sintoma:** Al crear una categoria nueva en el celular, no aparecia en la PC ni tablet. La categoria se guardaba en localStorage pero no en Supabase.
+
+**Causa:** Dos problemas:
+1. `handleSaveCategories` en App.tsx no usaba `await` para la funcion async `saveCategories()`
+2. `fetchCategoriesFromCloud()` usaba `.single()` que devuelve error HTTP 406 cuando la tabla esta vacia
+
+**Solucion:**
+1. Agregar `async/await` en `handleSaveCategories`:
+```typescript
+const handleSaveCategories = async (newCategories: CategoryConfig[]) => {
+  await saveCategories(newCategories);
+  // ...
+};
+```
+
+2. Cambiar `.single()` por select normal en `fetchCategoriesFromCloud()`:
+```typescript
+// ANTES (causaba error 406):
+const { data, error } = await supabase
+  .from('categories')
+  .select('*')
+  .eq('id', 'default')
+  .single();
+
+// DESPUES (funciona correctamente):
+const { data, error } = await supabase
+  .from('categories')
+  .select('*')
+  .eq('id', 'default');
+
+// data es array, tomamos primer elemento
+if (data && data.length > 0 && data[0].data) {
+  return data[0].data as CategoryConfig[];
+}
+```
+
+**Archivos modificados:**
+- `App.tsx:294-295` - async/await en handleSaveCategories
+- `services/storageService.ts:220-260` - getCategories() y saveCategories() ahora async con sync cloud
+- `services/supabaseService.ts:88-141` - fetchCategoriesFromCloud() y saveCategoriesToCloud()
+
+---
+
+## Sync de Categorias - Flujo Tecnico
+
+### Arquitectura
+
+```
+[Usuario crea/edita categoria]
+         ↓
+[CategoryManager.tsx] → onSave(categories)
+         ↓
+[App.tsx] → handleSaveCategories(categories)
+         ↓
+[storageService.ts] → saveCategories(categories)
+         ↓
+    ┌────┴────┐
+    ↓         ↓
+[localStorage]  [supabaseService.ts]
+ (inmediato)    saveCategoriesToCloud()
+                      ↓
+               [Supabase: tabla categories]
+```
+
+### Flujo de lectura al iniciar app
+
+```
+[App.tsx init()]
+      ↓
+[getCategories()] ← storageService.ts
+      ↓
+[getCategoriesLocal()] ← Lee localStorage primero
+      ↓
+[fetchCategoriesFromCloud()] ← Intenta leer de Supabase
+      ↓
+   ┌──┴──┐
+   ↓     ↓
+[Cloud tiene datos]  [Cloud vacio/error]
+   ↓                      ↓
+[Usa cloud,          [Usa local,
+ actualiza local]     sube a cloud]
+```
+
+### Fallbacks de seguridad
+
+| Escenario | Comportamiento |
+|-----------|---------------|
+| Supabase no configurado | Usa localStorage, sync desactivado |
+| Tabla categories no existe | Error capturado, usa localStorage |
+| Error de red | Error capturado, usa localStorage |
+| Cloud vacio | Usa localStorage, sube categorias al cloud |
+| Todo vacio | Usa DEFAULT_CATEGORIES |
+
+### Funciones clave
+
+| Funcion | Archivo | Descripcion |
+|---------|---------|-------------|
+| `getCategoriesLocal()` | storageService.ts:204 | Lee localStorage (sync) |
+| `getCategories()` | storageService.ts:220 | Lee local + sync con cloud (async) |
+| `saveCategories()` | storageService.ts:250 | Guarda local + cloud (async) |
+| `fetchCategoriesFromCloud()` | supabaseService.ts:88 | Lee de Supabase |
+| `saveCategoriesToCloud()` | supabaseService.ts:117 | Escribe a Supabase |
+
+### Logs de debug
+
+La app muestra estos logs en consola (F12):
+
+```
+// Al cargar:
+✓ Categories loaded from cloud: 4 categories
+Categories synced from cloud
+
+// Al guardar:
+saveCategories called with 4 categories
+✓ Categories saved to localStorage
+Saving categories to cloud: 4 categories
+✓ Categories synced to cloud successfully
+```
 
 ---
 
