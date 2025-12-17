@@ -58,8 +58,8 @@ export const App: React.FC = () => {
         const loadedNotes = await getNotes();
         setNotes(loadedNotes);
 
-        // Load categories
-        const loadedCategories = getCategories();
+        // Load categories (async - syncs with cloud)
+        const loadedCategories = await getCategories();
         setCategories(loadedCategories);
         if (loadedCategories.length > 0) {
           setActiveCategory(loadedCategories[0].id);
@@ -291,8 +291,8 @@ export const App: React.FC = () => {
   }, [notes, activeCategory, searchQuery]);
 
   // Handle category save
-  const handleSaveCategories = (newCategories: CategoryConfig[]) => {
-    saveCategories(newCategories);
+  const handleSaveCategories = async (newCategories: CategoryConfig[]) => {
+    await saveCategories(newCategories);
     setCategories(newCategories);
     // If active category was deleted, switch to first available
     if (!newCategories.find(c => c.id === activeCategory) && newCategories.length > 0) {

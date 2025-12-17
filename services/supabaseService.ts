@@ -1,5 +1,5 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { Note, SupabaseConfig } from '../types';
+import { Note, SupabaseConfig, CategoryConfig } from '../types';
 
 let supabase: SupabaseClient | null = null;
 
@@ -71,7 +71,7 @@ export const fetchNotesFromCloud = async (): Promise<Note[] | null> => {
       .select('*');
 
     if (error) throw error;
-    
+
     if (data) {
         // Map back from SQL rows to Note objects
         return data.map((row: any) => row.data as Note);
@@ -80,5 +80,62 @@ export const fetchNotesFromCloud = async (): Promise<Note[] | null> => {
   } catch (error) {
     console.error("Cloud Sync Error (Download):", error);
     return null;
+  }
+};
+
+// ============ CATEGORIES SYNC ============
+
+export const fetchCategoriesFromCloud = async (): Promise<CategoryConfig[] | null> => {
+  if (!supabase) return null;
+
+  try {
+    // No usar .single() para evitar error 406 cuando la tabla está vacía
+    const { data, error } = await supabase
+      .from('categories')
+      .select('*')
+      .eq('id', 'default');
+
+    if (error) {
+      console.error('Error fetching categories:', error);
+      throw error;
+    }
+
+    // data es un array, tomamos el primer elemento si existe
+    if (data && data.length > 0 && data[0].data) {
+      console.log('✓ Categories loaded from cloud:', data[0].data.length, 'categories');
+      return data[0].data as CategoryConfig[];
+    }
+
+    console.log('No categories found in cloud, will use local');
+    return null;
+  } catch (error) {
+    console.error("Cloud Sync Error (Categories Download):", error);
+    return null;
+  }
+};
+
+export const saveCategoriesToCloud = async (categories: CategoryConfig[]): Promise<boolean> => {
+  if (!supabase) {
+    console.warn('Categories sync skipped: Supabase not initialized');
+    return false;
+  }
+
+  try {
+    console.log('Saving categories to cloud:', categories.length, 'categories');
+    const { error } = await supabase
+      .from('categories')
+      .upsert({
+        id: 'default',
+        updated_at: new Date().toISOString(),
+        data: categories
+      }, { onConflict: 'id' });
+
+    if (error) throw error;
+
+    console.log('✓ Categories synced to cloud successfully');
+    return true;
+  } catch (error) {
+    console.error("✗ Cloud Sync Error (Categories Upload):", error);
+    return false;
   }
 };

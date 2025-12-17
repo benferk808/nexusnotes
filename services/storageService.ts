@@ -1,6 +1,6 @@
 import { Note, AppSettings, CategoryConfig } from '../types';
 import { DEFAULT_CATEGORIES } from '../constants';
-import { initSupabase, syncNotesToCloud, fetchNotesFromCloud, deleteNoteFromCloud } from './supabaseService';
+import { initSupabase, syncNotesToCloud, fetchNotesFromCloud, deleteNoteFromCloud, fetchCategoriesFromCloud, saveCategoriesToCloud } from './supabaseService';
 
 const DB_NAME = 'OmniNotesDB';
 const STORE_NAME = 'notes';
@@ -200,7 +200,8 @@ export const saveSettings = (settings: AppSettings) => {
 
 // --- Categories ---
 
-export const getCategories = (): CategoryConfig[] => {
+// Get categories from local storage (sync, for initial render)
+export const getCategoriesLocal = (): CategoryConfig[] => {
   try {
     const data = localStorage.getItem(CATEGORIES_KEY);
     if (data) {
@@ -209,14 +210,51 @@ export const getCategories = (): CategoryConfig[] => {
         return parsed;
       }
     }
-    // First time or empty - save and return defaults
-    saveCategories(DEFAULT_CATEGORIES);
     return DEFAULT_CATEGORIES;
   } catch {
     return DEFAULT_CATEGORIES;
   }
 };
 
-export const saveCategories = (categories: CategoryConfig[]): void => {
+// Get categories with cloud sync (async)
+export const getCategories = async (): Promise<CategoryConfig[]> => {
+  // 1. Get local categories first
+  const localCategories = getCategoriesLocal();
+
+  // 2. Try to fetch from cloud
+  const cloudCategories = await fetchCategoriesFromCloud();
+
+  if (cloudCategories && cloudCategories.length > 0) {
+    // Cloud has categories - use them and update local
+    localStorage.setItem(CATEGORIES_KEY, JSON.stringify(cloudCategories));
+    console.log('Categories synced from cloud');
+    return cloudCategories;
+  }
+
+  // 3. No cloud categories - save local to cloud if we have any
+  if (localCategories.length > 0) {
+    await saveCategoriesToCloud(localCategories);
+  }
+
+  // Save defaults if nothing exists
+  if (localCategories.length === 0) {
+    localStorage.setItem(CATEGORIES_KEY, JSON.stringify(DEFAULT_CATEGORIES));
+    await saveCategoriesToCloud(DEFAULT_CATEGORIES);
+    return DEFAULT_CATEGORIES;
+  }
+
+  return localCategories;
+};
+
+// Save categories to local storage AND cloud
+export const saveCategories = async (categories: CategoryConfig[]): Promise<void> => {
+  console.log('saveCategories called with', categories.length, 'categories');
+
+  // Save to local storage immediately
   localStorage.setItem(CATEGORIES_KEY, JSON.stringify(categories));
+  console.log('✓ Categories saved to localStorage');
+
+  // Sync to cloud
+  const cloudResult = await saveCategoriesToCloud(categories);
+  console.log('Cloud sync result:', cloudResult ? 'success' : 'failed');
 };
